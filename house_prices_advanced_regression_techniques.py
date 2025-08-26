@@ -139,7 +139,7 @@ df_encoded = df_encoded.with_columns(df[y_col].alias(y_col))
 
 # train model
 rdf = RandomForestClassifier(
-    n_estimators=5000, max_depth=50, max_leaf_nodes=5, random_state=2
+    n_estimators=200, max_depth=50, max_leaf_nodes=5, random_state=2
 )
 rdf.fit(df_encoded[x_cols], df_encoded[y_col])
 
