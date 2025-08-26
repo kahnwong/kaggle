@@ -2,7 +2,6 @@
 import pandas as pd
 import polars as pl
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import median_absolute_error
 from sklearn.preprocessing import OneHotEncoder
 
 # read data
@@ -140,7 +139,7 @@ df_encoded = df_encoded.with_columns(df[y_col].alias(y_col))
 
 # train model
 rdf = RandomForestClassifier(
-    n_estimators=200, max_depth=50, max_leaf_nodes=5, random_state=2
+    n_estimators=5000, max_depth=50, max_leaf_nodes=5, random_state=2
 )
 rdf.fit(df_encoded[x_cols], df_encoded[y_col])
 
@@ -196,8 +195,9 @@ df_ground_truth = pl.read_csv("data/submission.csv").rename(
 
 ## regression
 df_prediction = df_prediction.join(df_ground_truth, on=id_col, how="inner")
-
-mae = median_absolute_error(
-    df_prediction[y_col], df_prediction[f"{y_col}_ground_truth"]
+df_prediction = df_prediction.with_columns(
+    (pl.col(y_col) - pl.col(f"{y_col}_ground_truth")).abs().alias("diff")
 )
+
+mae = df_prediction["diff"].median()
 print(f"accuracy: {mae}")
