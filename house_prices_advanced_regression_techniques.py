@@ -303,7 +303,11 @@ df_ground_truth = pl.read_csv("data/submission.csv").rename(
 ## regression
 df_prediction = df_prediction.join(df_ground_truth, on=id_col, how="inner")
 df_prediction = df_prediction.with_columns(
-    ((pl.col(y_col) - pl.col(f"{y_col}_ground_truth")).abs()).alias("AbsError")
+    (
+        ((pl.col(y_col) - pl.col(f"{y_col}_ground_truth")).abs())
+        / pl.col(f"{y_col}_ground_truth")
+        * 100
+    ).alias("AbsError")
 )
 
 mae = df_prediction["AbsError"].median()
