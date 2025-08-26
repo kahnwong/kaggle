@@ -105,7 +105,6 @@ y_col = "SalePrice"
 x_cols_categorial = []
 x_cols_numeric = ["BedroomAbvGr", "FullBath", "HalfBath", "GrLivArea", "LotArea"]
 
-
 x_cols = x_cols_numeric + x_cols_categorial
 
 # encode
@@ -141,11 +140,20 @@ df_encoded = df_encoded.with_columns(df[y_col].alias(y_col))
 # y_encoded = le.transform(df[y_col])
 # df_encoded = df_encoded.with_columns(pl.Series(y_encoded).alias(y_col))
 
+# feature engineering
+df_encoded = df_encoded.with_columns(
+    (
+        (pl.col("BedroomAbvGr") * 2)
+        + (pl.col("FullBath") * 1)
+        + (pl.col("HalfBath") * 0.5)
+    ).alias("RoomWeight")
+)
+
 # train model
 rdf = RandomForestClassifier(
     n_estimators=200, max_depth=50, max_leaf_nodes=5, random_state=2
 )
-rdf.fit(df_encoded[x_cols], df_encoded[y_col])
+rdf.fit(df_encoded[x_cols + ["RoomWeight"]], df_encoded[y_col])
 
 # prep test data
 df_test = pl.read_csv("data/test.csv", null_values=["NA"])
@@ -173,7 +181,14 @@ for i in x_cols_categorial:
         pl.Series(numeric_series.to_list()).alias(i)
     )
 
-pred = rdf.predict(df_test_encoded[x_cols])
+df_test_encoded = df_test_encoded.with_columns(
+    (
+        (pl.col("BedroomAbvGr") * 2)
+        + (pl.col("FullBath") * 1)
+        + (pl.col("HalfBath") * 0.5)
+    ).alias("RoomWeight")
+)
+pred = rdf.predict(df_test_encoded[x_cols + ["RoomWeight"]])
 # pred = le.inverse_transform(pred)
 
 df_prediction = pl.DataFrame()
