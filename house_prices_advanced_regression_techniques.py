@@ -281,7 +281,7 @@ pred = rdf.predict(df_test_encoded[x_cols])
 
 df_prediction = pl.DataFrame()
 df_prediction = df_prediction.with_columns(df_test[id_col].alias(id_col))
-df_prediction = df_prediction.with_columns(pl.Series(pred).alias(y_col))
+df_prediction = df_prediction.with_columns((pl.Series(pred)).alias(y_col))
 df_prediction.to_pandas().to_csv(
     "data/prediction.csv", index=False
 )  # polars write true/false, but kaggle expects capitalized form
@@ -310,5 +310,6 @@ df_prediction = df_prediction.with_columns(
     ).alias("AbsError")
 )
 
+
 mae = df_prediction["AbsError"].median()
-print(f"accuracy: {mae}")
+print(f"accuracy: {100 - mae}")
