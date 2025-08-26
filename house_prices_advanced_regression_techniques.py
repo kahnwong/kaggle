@@ -57,60 +57,92 @@ y_col = "SalePrice"
 #     "MoSold",
 #     "YrSold",
 # ]
-# x_cols_categorial = [
-#     "MSZoning",
-#     "Street",
-#     "Alley",
-#     "LotShape",
-#     "LandContour",
-#     "Utilities",
-#     "LotConfig",
-#     "LandSlope",
-#     "Neighborhood",
-#     "Condition1",
-#     "Condition2",
-#     "BldgType",
-#     "HouseStyle",
-#     "RoofStyle",
-#     "RoofMatl",
-#     "Exterior1st",
-#     "Exterior2nd",
-#     "MasVnrType",
-#     "ExterQual",
-#     "ExterCond",
-#     "Foundation",
-#     "BsmtQual",
-#     "BsmtCond",
-#     "BsmtExposure",
-#     "BsmtFinType1",
-#     "BsmtFinType2",
-#     "Heating",
-#     "HeatingQC",
-#     "CentralAir",
-#     "Electrical",
-#     "KitchenQual",
-#     "Functional",
-#     "FireplaceQu",
-#     "GarageType",
-#     "GarageFinish",
-#     "GarageQual",
-#     "GarageCond",
-#     "PavedDrive",
-#     "PoolQC",
-#     "Fence",
-#     "MiscFeature",
-#     "SaleType",
-#     "SaleCondition",
-# ]
-x_cols_categorial = ["Neighborhood"]
-x_cols_numeric = ["BedroomAbvGr", "FullBath", "HalfBath", "GrLivArea", "LotArea"]
+x_cols_categorial = [
+    # "MSZoning",
+    # "Street",
+    # "Alley",
+    # "LotShape",
+    # "LandContour",
+    # "Utilities",
+    # "LotConfig",
+    # "LandSlope",
+    "Neighborhood",
+    # "Condition1",
+    # "Condition2",
+    "BldgType",
+    # "HouseStyle",
+    # "RoofStyle",
+    # "RoofMatl",
+    # "Exterior1st",
+    # "Exterior2nd",
+    # "MasVnrType",
+    # "ExterQual",
+    # "ExterCond",
+    # "Foundation",
+    # "BsmtQual",
+    # "BsmtCond",
+    # "BsmtExposure",
+    # "BsmtFinType1",
+    # "BsmtFinType2",
+    # "Heating",
+    # "HeatingQC",
+    # "CentralAir",
+    # "Electrical",
+    # "KitchenQual",
+    # "Functional",
+    # "FireplaceQu",
+    # "GarageType",
+    # "GarageFinish",
+    # "GarageQual",
+    # "GarageCond",
+    # "PavedDrive",
+    # "PoolQC",
+    # "Fence",
+    # "MiscFeature",
+    # "SaleType",
+    # "SaleCondition",
+]
 
-x_cols = x_cols_numeric + x_cols_categorial
+# feature engineering
+df = df.with_columns(
+    (
+        (pl.col("BedroomAbvGr") * 2)
+        + (pl.col("FullBath") * 1)
+        + (pl.col("HalfBath") * 0.5)
+    ).alias("RoomWeight")
+)
+
+BldgType_map = {
+    "1Fam": "3.0",
+    "2FmCon": "2.5",
+    "Duplx": "1.0",
+    "TwnhsE": "2.0",
+    "TwnhsI": "2.0",
+}
+
+df = df.with_columns(
+    pl.col("BldgType")
+    .replace_strict(BldgType_map, default=None)
+    .alias("BldgTypeWeight")
+)
+
 
 # encode
+x_cols_numeric = [
+    "BedroomAbvGr",
+    "FullBath",
+    "HalfBath",
+    "GrLivArea",
+    "LotArea",
+    "RoomWeight",
+    "BldgTypeWeight",
+]
+x_cols = x_cols_numeric + x_cols_categorial
+
 encs = {}
 df_encoded = pl.DataFrame()
 df_encoded = df_encoded.with_columns(df[id_col].alias(id_col))
+
 
 for i in x_cols_numeric:
     df_encoded = df_encoded.with_columns(df[i].alias(i))
@@ -140,25 +172,39 @@ df_encoded = df_encoded.with_columns(df[y_col].alias(y_col))
 # y_encoded = le.transform(df[y_col])
 # df_encoded = df_encoded.with_columns(pl.Series(y_encoded).alias(y_col))
 
-# feature engineering
-df_encoded = df_encoded.with_columns(
-    (
-            (pl.col("BedroomAbvGr") * 2)
-            + (pl.col("FullBath") * 1)
-            + (pl.col("HalfBath") * 0.5)
-    ).alias("RoomWeight")
-)
 
 # train model
 rdf = RandomForestClassifier(
     n_estimators=200, max_depth=50, max_leaf_nodes=5, random_state=2
 )
-rdf.fit(df_encoded[x_cols + ["RoomWeight"]], df_encoded[y_col])
+rdf.fit(df_encoded[x_cols], df_encoded[y_col])
 
 # prep test data
 df_test = pl.read_csv("data/test.csv", null_values=["NA"])
-df_test_encoded = pl.DataFrame()
+df_test = df_test.with_columns(
+    (
+        (pl.col("BedroomAbvGr") * 2)
+        + (pl.col("FullBath") * 1)
+        + (pl.col("HalfBath") * 0.5)
+    ).alias("RoomWeight")
+)
 
+BldgType_map = {
+    "1Fam": "3.0",
+    "2FmCon": "2.5",
+    "Duplx": "1.0",
+    "TwnhsE": "2.0",
+    "TwnhsI": "2.0",
+}
+
+df_test = df_test.with_columns(
+    pl.col("BldgType")
+    .replace_strict(BldgType_map, default=None)
+    .alias("BldgTypeWeight")
+)
+
+
+df_test_encoded = pl.DataFrame()
 df_test_encoded = df_test_encoded.with_columns(df_test[id_col].alias(id_col))
 
 for i in x_cols_numeric:
@@ -181,14 +227,7 @@ for i in x_cols_categorial:
         pl.Series(numeric_series.to_list()).alias(i)
     )
 
-df_test_encoded = df_test_encoded.with_columns(
-    (
-            (pl.col("BedroomAbvGr") * 2)
-            + (pl.col("FullBath") * 1)
-            + (pl.col("HalfBath") * 0.5)
-    ).alias("RoomWeight")
-)
-pred = rdf.predict(df_test_encoded[x_cols + ["RoomWeight"]])
+pred = rdf.predict(df_test_encoded[x_cols])
 # pred = le.inverse_transform(pred)
 
 df_prediction = pl.DataFrame()
