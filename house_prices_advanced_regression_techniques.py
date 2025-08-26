@@ -106,9 +106,11 @@ x_cols_categorial = [
 # feature engineering
 df = df.with_columns(
     (
-        (pl.col("BedroomAbvGr") * 2)
-        + (pl.col("FullBath") * 1)
-        + (pl.col("HalfBath") * 0.5)
+        (pl.col("BedroomAbvGr") * 3)
+        + (pl.col("FullBath") * 2)
+        + (pl.col("HalfBath") * 1.5)
+        + (pl.col("BsmtFullBath") * 1)
+        + (pl.col("BsmtHalfBath") * 0.5)
     ).alias("RoomWeight")
 )
 
@@ -208,9 +210,11 @@ rdf.fit(df_encoded[x_cols], df_encoded[y_col])
 df_test = pl.read_csv("data/test.csv", null_values=["NA"])
 df_test = df_test.with_columns(
     (
-        (pl.col("BedroomAbvGr") * 2)
-        + (pl.col("FullBath") * 1)
-        + (pl.col("HalfBath") * 0.5)
+        (pl.col("BedroomAbvGr") * 3)
+        + (pl.col("FullBath") * 2)
+        + (pl.col("HalfBath") * 1.5)
+        + (pl.col("BsmtFullBath") * 1)
+        + (pl.col("BsmtHalfBath") * 0.5)
     ).alias("RoomWeight")
 )
 
@@ -309,6 +313,7 @@ df_prediction = df_prediction.with_columns(
         * 100
     ).alias("AbsError")
 )
+# print(df_prediction['AbsError'].hist())
 
 
 mae = df_prediction["AbsError"].median()
