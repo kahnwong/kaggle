@@ -113,17 +113,40 @@ df = df.with_columns(
 )
 
 BldgType_map = {
-    "1Fam": "3.0",
-    "2FmCon": "2.5",
-    "Duplx": "1.0",
-    "TwnhsE": "2.0",
-    "TwnhsI": "2.0",
+    "1Fam": 3.0,
+    "2FmCon": 2.5,
+    "Duplx": 1.0,
+    "TwnhsE": 2.0,
+    "TwnhsI": 2.0,
 }
 
 df = df.with_columns(
     pl.col("BldgType")
     .replace_strict(BldgType_map, default=None)
     .alias("BldgTypeWeight")
+)
+
+HouseStyle_map = {
+    "1Story": 2.0,
+    "1.5Fin": 2.5,
+    "1.5Unf": 2.2,
+    "2Story": 3.0,
+    "2.5Fin": 3.5,
+    "2.5Unf": 3.2,
+    "SFoyer": 1.0,
+    "SLvl": 0.5,
+}
+
+df = df.with_columns(
+    pl.col("HouseStyle")
+    .replace_strict(HouseStyle_map, default=None)
+    .alias("HouseStyleWeight")
+)
+
+df = df.with_columns(
+    ((pl.col("BldgTypeWeight") * 2) + (pl.col("HouseStyleWeight") * 1)).alias(
+        "PropertyWeight"
+    )
 )
 
 
@@ -135,7 +158,9 @@ x_cols_numeric = [
     "GrLivArea",
     "LotArea",
     "RoomWeight",
-    "BldgTypeWeight",
+    # "BldgTypeWeight",
+    # "HouseStyleWeight",
+    "PropertyWeight",
 ]
 x_cols = x_cols_numeric + x_cols_categorial
 
@@ -189,18 +214,42 @@ df_test = df_test.with_columns(
     ).alias("RoomWeight")
 )
 
+
 BldgType_map = {
-    "1Fam": "3.0",
-    "2FmCon": "2.5",
-    "Duplx": "1.0",
-    "TwnhsE": "2.0",
-    "TwnhsI": "2.0",
+    "1Fam": 3.0,
+    "2FmCon": 2.5,
+    "Duplx": 1.0,
+    "TwnhsE": 2.0,
+    "TwnhsI": 2.0,
 }
 
 df_test = df_test.with_columns(
     pl.col("BldgType")
     .replace_strict(BldgType_map, default=None)
     .alias("BldgTypeWeight")
+)
+
+HouseStyle_map = {
+    "1Story": 2.0,
+    "1.5Fin": 2.5,
+    "1.5Unf": 2.2,
+    "2Story": 3.0,
+    "2.5Fin": 3.5,
+    "2.5Unf": 3.2,
+    "SFoyer": 1.0,
+    "SLvl": 0.5,
+}
+
+df_test = df_test.with_columns(
+    pl.col("HouseStyle")
+    .replace_strict(HouseStyle_map, default=None)
+    .alias("HouseStyleWeight")
+)
+
+df_test = df_test.with_columns(
+    ((pl.col("BldgTypeWeight") * 2) + (pl.col("HouseStyleWeight") * 1)).alias(
+        "PropertyWeight"
+    )
 )
 
 
