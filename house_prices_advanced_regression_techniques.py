@@ -102,7 +102,7 @@ y_col = "SalePrice"
 #     "SaleType",
 #     "SaleCondition",
 # ]
-x_cols_categorial = []
+x_cols_categorial = ["Neighborhood"]
 x_cols_numeric = ["BedroomAbvGr", "FullBath", "HalfBath", "GrLivArea", "LotArea"]
 
 x_cols = x_cols_numeric + x_cols_categorial
@@ -143,9 +143,9 @@ df_encoded = df_encoded.with_columns(df[y_col].alias(y_col))
 # feature engineering
 df_encoded = df_encoded.with_columns(
     (
-        (pl.col("BedroomAbvGr") * 2)
-        + (pl.col("FullBath") * 1)
-        + (pl.col("HalfBath") * 0.5)
+            (pl.col("BedroomAbvGr") * 2)
+            + (pl.col("FullBath") * 1)
+            + (pl.col("HalfBath") * 0.5)
     ).alias("RoomWeight")
 )
 
@@ -183,9 +183,9 @@ for i in x_cols_categorial:
 
 df_test_encoded = df_test_encoded.with_columns(
     (
-        (pl.col("BedroomAbvGr") * 2)
-        + (pl.col("FullBath") * 1)
-        + (pl.col("HalfBath") * 0.5)
+            (pl.col("BedroomAbvGr") * 2)
+            + (pl.col("FullBath") * 1)
+            + (pl.col("HalfBath") * 0.5)
     ).alias("RoomWeight")
 )
 pred = rdf.predict(df_test_encoded[x_cols + ["RoomWeight"]])
@@ -215,8 +215,8 @@ df_ground_truth = pl.read_csv("data/submission.csv").rename(
 ## regression
 df_prediction = df_prediction.join(df_ground_truth, on=id_col, how="inner")
 df_prediction = df_prediction.with_columns(
-    (pl.col(y_col) - pl.col(f"{y_col}_ground_truth")).abs().alias("diff")
+    ((pl.col(y_col) - pl.col(f"{y_col}_ground_truth")).abs()).alias("AbsError")
 )
 
-mae = df_prediction["diff"].median()
+mae = df_prediction["AbsError"].median()
 print(f"accuracy: {mae}")
